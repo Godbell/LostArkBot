@@ -11,14 +11,23 @@ export default class WebhookManager {
         this.webhookRegisterHttp = new XMLHttpRequest.XMLHttpRequest();
         this.webhookRegisterHttp.addEventListener("load", () =>
         {
-            let result = this.webhookRegisterHttp.responseText.json();
+            let result = JSON.parse(this.webhookRegisterHttp.responseText);
             this.regWebhook['webhooks'].push(
                 {
-                    "id": result['id'],
-                    "name": result['name'],
-                    "channel_id": result['channel_id'],
-                    "token": result['token'],
-                    "url": this.registeringURL
+                    id: result['id'],
+                    name: result['name'],
+                    channel_id: result['channel_id'],
+                    token: result['token'],
+                    url: this.registeringURL
+                }
+            );
+            fileStream.writeFile(
+                './webhooks.json', JSON.stringify(this.regWebhook), 'utf8',
+                (err) =>
+                {
+                    if (err) console.log(err);
+
+                    else console.log(JSON.stringify(this.regWebhook));
                 }
             );
         });
@@ -47,6 +56,7 @@ export default class WebhookManager {
     registerWebhook(webhookURL)
     {
         this.registeringURL = webhookURL;
+        console.log(webhookURL);
         this.webhookRegisterHttp.open("GET", webhookURL);
         this.webhookRegisterHttp.send();
     }

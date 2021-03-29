@@ -44,18 +44,16 @@ client.on('ready', () => {
             console.log(itemJson);
             let embed = {
                     color: '#0099ff',
-                    title: '경매장 검색 결과 상위 10개',
-
+                    title: itemJson['Element_000']['value'],
                     fields: [
-                        {name: '아이템 이름', value: itemJson['Element_000']['value']},
                         {name: '등급', value: itemJson['Element_001']['value']['leftStr0'], inline: true},
-                        {name: '품질', value: itemJson['Element_001']['value']['leftStr1'], inline: true},
+                        {name: '품질', value: itemJson['Element_001']['value']['qualityValue'], inline: true},
                         {name: '티어', value: itemJson['Element_001']['value']['leftStr2'], inline: true},
-                        {name: '거래 정보', value: itemJson['Element_003']['value']},
-                        {name: '단일 장착 가능 여부', value: itemJson['Element_004']},
-                        {name: '기본 효과', value: itemJson['Element_005']['Element_001'], inline: true},
-                        {name: '추가 효과', value: itemJson['Element_006']['Element_001'], inline: true},
-                        {name: '무작위 각인 효과', value: itemJson['Element_007']['value']},
+                        {name: '거래 정보', value: itemJson['Element_003']['value'], inline: true},
+                        {name: '단일 장착 가능 여부', value: itemJson['Element_004']['value']},
+                        {name: '기본 효과', value: itemJson['Element_005']['value']['Element_001'], inline: true},
+                        {name: '추가 효과', value: itemJson['Element_006']['value']['Element_001'], inline: true},
+                        {name: '무작위 각인 효과', value: itemJson['Element_007']['value']['Element_001'], inline: true},
                         {name: '품질 업그레이드 가능 여부', value: itemJson['Element_008']['value']},
                         {name: '입수처', value: itemJson['Element_009']['value']}
                         ]
@@ -89,12 +87,12 @@ client.on('message', msg => {
     }
 
     // 웹훅
-    if (msg.content.split(":").includes("웹후크 등록")) {
-        whm.registerWebhook(msg.content.split(":")[1]);
+    if (msg.content.split(",")[0].includes("웹후크 등록")) {
+        whm.registerWebhook(msg.content.split(",")[1]);
     }
 
     // 경매장
-    if (msg.content.split(":")[0].includes("경매장검색")) {
+    if (msg.content.split(",")[0].includes("경매장검색")) {
         if (whm.findWebhookWithChannelId(msg.channel.id) == null) {
             const embed = new Discord.MessageEmbed()
                 .setTitle("웹후크 등록 방법")
@@ -112,7 +110,7 @@ client.on('message', msg => {
                     msg.channel.send(embed);
                 });
         } else {
-            let searchName = msg.content.split(":")[1];
+            let searchName = msg.content.split(",")[1];
             lastEventMsg = msg;
 
             // send webhookURL
