@@ -1,6 +1,5 @@
 import Discord from 'discord.js';
 import {discordBotToken} from './config.js';
-import nodeHtmlToImage from 'node-html-to-image';
 import pkg from "node-html-parser";
 
 import auction from './auction.js';
@@ -63,18 +62,6 @@ client.on('ready', () => {
         whm.sendWebhook(
             lastEventMsg.channel.id,
             embeds);
-
-        nodeHtmlToImage(
-            {
-                html: "<html><body>" + auc.http.responseText + "</body></html>",
-                output: './image.png'
-            }
-        ).then(res => {
-            console.log('The image was created successfully');
-            lastEventMsg.channel.send(
-                new Discord.MessageAttachment('./image.png', `img` + ".jpeg")
-            )
-        });
     });
 });
 
