@@ -1,5 +1,5 @@
 import Discord from 'discord.js';
-import {discordBotToken} from 'config.js';
+import {discordBotToken} from './config.js';
 import nodeHtmlToImage from 'node-html-to-image';
 import pkg from "node-html-parser";
 
@@ -29,21 +29,35 @@ client.on('ready', () => {
 
         for (let i = 0; i < res.length; i++) {
             let item = res[i];
+            item = item.toString().replace(/&quot;/gi, '\"')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/<BR>/g, ' / ')
+                .replace(/<p.*;>/gi, '')
+                .replace(/<\/p>/gi, '')
+                .replace(/<\/font>/gi, '')
+                .replace(/<font.*>/gim, '')
+                .split(/data-item="/gi)[1]
+                .split(/"><img/)[0];
+            ;
+            let itemJson = JSON.parse(item);
+            console.log(itemJson);
             let embed = {
                     color: '#0099ff',
                     title: '경매장 검색 결과 상위 10개',
+
                     fields: [
-                        {name: '아이템 이름', value: item['Element_000']},
-                        {name: '상세', value: item['Element_001']},
-                        {name: '\u200B', value: item['Element_002']},
-                        {name: '거래 정보', value: item['Element_003']},
-                        {name: '단일 장착 가능 여부', value: item['Element_004']},
-                        {name: '기본 효과', value: item['Element_005']},
-                        {name: '추가 효과', value: item['Element_006']},
-                        {name: '무작위 각인 효과', value: item['Element_007']},
-                        {name: '품질 업그레이드 가능 여부', value: item['Element_008']},
-                        {name: '입수처', value: item['Element_000']},
-                        {name: '\u200B', value: '\u200B'}
+                        {name: '아이템 이름', value: itemJson['Element_000']['value']},
+                        {name: '등급', value: itemJson['Element_001']['value']['leftStr0'], inline: true},
+                        {name: '품질', value: itemJson['Element_001']['value']['leftStr1'], inline: true},
+                        {name: '티어', value: itemJson['Element_001']['value']['leftStr2'], inline: true},
+                        {name: '거래 정보', value: itemJson['Element_003']['value']},
+                        {name: '단일 장착 가능 여부', value: itemJson['Element_004']},
+                        {name: '기본 효과', value: itemJson['Element_005']['Element_001'], inline: true},
+                        {name: '추가 효과', value: itemJson['Element_006']['Element_001'], inline: true},
+                        {name: '무작위 각인 효과', value: itemJson['Element_007']['value']},
+                        {name: '품질 업그레이드 가능 여부', value: itemJson['Element_008']['value']},
+                        {name: '입수처', value: itemJson['Element_009']['value']}
                         ]
                 };
             embeds.embeds.push(embed);
