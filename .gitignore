@@ -118,3 +118,4 @@ dist
 .idea/
 image.png
 config.js
+webhooks.json
