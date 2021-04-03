@@ -71,7 +71,7 @@ export default class WebhookManager {
         return null;
     }
 
-    sendWebhook(channel, sendingObj) {
+    sendWebhook(channel, sendingText, sendingObj) {
         console.log(channel);
         console.log(JSON.stringify(sendingObj));
         let targetWebhook = this.findWebhookWithChannelId(channel);
@@ -82,6 +82,6 @@ export default class WebhookManager {
         }
 
         const webhookClient = new Discord.WebhookClient(targetWebhook['id'], targetWebhook['token']);
-        webhookClient.send('webhook test', sendingObj);
+        webhookClient.send(sendingText, sendingObj);
     }
 }
