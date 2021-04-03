@@ -25,11 +25,17 @@ export default class auction
         this.http.addEventListener("load", () => {
             let responseHtmlString = this.http.responseText;
             let root = parse(responseHtmlString);
+
+            let imgSrc = root.querySelectorAll("img");
+            let nameData = root.querySelectorAll('.name');
+            let countData = root.querySelectorAll('.count');
+            let timeData = root.querySelectorAll('.time');
+            let effectData = root.querySelectorAll(".list__effect");
+            let itemLevelData = root.querySelectorAll('.level');
+            let gradeData = root.querySelectorAll('.list__detail');
             let aucData = root.querySelectorAll("tbody");
 
-
-            let res = root.querySelectorAll(".slot");
-            let imgSrc = root.querySelectorAll("img");
+            let itemSlot = root.querySelectorAll(".slot");
             let resultAmountData = root.querySelectorAll("script");
             this.lastfoundDataAmount = parseInt(resultAmountData.toString().split('_totalCount = ')[1].replace(/[^0-9]/gim, ''));
 
@@ -37,16 +43,9 @@ export default class auction
                 "embeds": []
             };
 
-            // tooltip
-            for (let i = 0; i < res.length; i++) {
-                let item = res[i];
-                item = item.toString().replace(/&quot;/gi, '\"')
-                    .replace(/&lt;/g, '<')
-                    .replace(/&gt;/g, '>')
-                    .split(/"><img/)[0]
-                    .split(/data-item="/gi)[1]
-                    .replace(/<BR>/gi, ' / ')
-                    .replace(/(<([^>]+)>)/ig,"");
+            for (let i = 0; i < nameData.length; i++) {
+                let item = itemSlot[i];
+                item = this.#decodeJsEscape(item);
 
                 imgSrc[i] = imgSrc[i].toString().split('"')[1];
                 let itemJson = JSON.parse(item);
@@ -54,41 +53,71 @@ export default class auction
                 // ELEMENT 000: 공통, 아이템 이름
                 let embed = {
                     color: '#0099ff',
-                    title: itemJson['Element_000']['value'],    // 아이템 이름
+                    title: nameData[i].innerText,    // 아이템 이름
                     thumbnail: { url: imgSrc[i] },
                     fields: [ ]
                 };
+                let tooltip = [];
 
+                console.log(
+                    aucData[i].childNodes[1].innerText.replace(/[^0-9]/gim, '')
+                     + ", " + aucData[i].childNodes[3].innerText.replace(/[^0-9]/gim, '')
+                     + ", " + aucData[i].childNodes[5].innerText.replace(/[^0-9]/gim, '')
+                );
+
+                embed['fields'].push({name: '거래 정보', value: countData[i].innerText, inline: true});
+                embed['fields'].push({name: '티어 / 품질', value: gradeData[i].innerHTML.toString().split('<span>')[1].split('</span>')[0], inline: true});
+
+                let effectDataStr = ""
+                effectData[i].childNodes.forEach(child => {
+                    effectDataStr += child.innerText + '\n'
+                });
+                embed['fields'].push({name: '효과', value: effectDataStr});
+
+                embed['fields'].push({name: '남은 시간', value: timeData[i].textContent})
+                embed['fields'].push({name: '현재 최고가', value: aucData[i].childNodes[1].innerText.replace(/[^0-9]/gim, ''), inline: true});
+                if (embed['fields'][embed['fields'].length - 1]['value'].length == 0)
+                    embed['fields'][embed['fields'].length - 1]['value'] = '-';
+                embed['fields'].push({name: '최소 입찰가', value: aucData[i].childNodes[3].innerText.replace(/[^0-9]/gim, ''), inline: true});
+                if (embed['fields'][embed['fields'].length - 1]['value'].length == 0)
+                    embed['fields'][embed['fields'].length - 1]['value'] = '-';
+                embed['fields'].push({name: '즉시 구매가', value: aucData[i].childNodes[5].innerText.replace(/[^0-9]/gim, ''), inline: true});
+                if (embed['fields'][embed['fields'].length - 1]['value'].length == 0)
+                    embed['fields'][embed['fields'].length - 1]['value'] = '-';
+                console.log(JSON.stringify(embed));
+
+                // Item ToolTip
                 // ELEMENT 001: 공통, 등급 및 종류
-                embed['fields'].push({name: '등급', value: itemJson['Element_001']['value']['leftStr0'], inline: true});
+                //tooltip.push({name: '등급', value: itemJson['Element_001']['value']['leftStr0'], inline: true});
 
+                tooltip.push({name: '아이템 이름', value: itemJson['Element_000']['value']});
                 let typeOfItem = itemJson['Element_001']['value']['leftStr0'].split(' ')[1];
                 if (typeOfItem != '어빌리티') {
                     // 어빌리티 스톤은 품질 값이 없음
-                    embed['fields'].push({name: '품질', value: itemJson['Element_001']['value']['qualityValue'], inline: true});
+                    tooltip.push({name: '품질', value: itemJson['Element_001']['value']['qualityValue'], inline: true});
                 }
 
                 // ELEMENT 002: 무기/방어구에만 존재, 전용 직업
                 if (typeOfItem != '어빌리티' && typeOfItem != '목걸이' && typeOfItem != '귀걸이' && typeOfItem != '반지' && typeOfItem != '힘을')
                 {
-                    embed['fields'].push({name: '직업', value: itemJson['Element_002']['value'], inline: true});
+                    tooltip.push({name: '직업', value: itemJson['Element_002']['value'], inline: true});
                 }
 
                 // ELEMENT 003: 공통, 거래 정보
-                embed['fields'].push({name: '거래 정보', value: itemJson['Element_003']['value'], inline: true});
+                tooltip.push({name: '거래 정보', value: itemJson['Element_003']['value'], inline: true});
 
                 // ELEMENT 004: 어빌리티 스톤과 무기/방어구는 기본 효과, 장신구는 단일 장착 가능 여부, 힘을 잃은 장비는 트라이포드 효과
                 if (typeOfItem == '목걸이' || typeOfItem == '귀걸이' || typeOfItem == '반지')
                 {
-                    embed['fields'].push({name: '단일 장착 가능 여부', value: itemJson['Element_004']['value']});
+                    tooltip.push({name: '단일 장착 가능 여부', value: itemJson['Element_004']['value']});
                 }
                 else if (typeOfItem == '힘을')
                 {
-                    embed['fields'].push({name: '트라이포드 효과', value: itemJson['Element_004']['value']['Element_000']['contentStr']['Element_000']['contentStr'] + " / " + itemJson['Element_004']['value']['Element_000']['contentStr']['Element_001']['contentStr']});
+                    tooltip.push({name: '트라이포드 효과', value: itemJson['Element_004']['value']['Element_000']['contentStr']['Element_000']['contentStr'] + " / " + itemJson['Element_004']['value']['Element_000']['contentStr']['Element_001']['contentStr']});
                 }
                 else
                 {
-                    embed['fields'].push({name: '기본 효과', value: itemJson['Element_004']['value']['Element_001']})
+                    tooltip.push({name: '기본 효과', value: itemJson['Element_004']['value']['Element_001']})
                 }
 
                 // ELEMENT 005: 장신구는 기본 효과, 어빌리티 스톤은 무작위 각인 효과, 무기/방어구는 추가 효과, 힘을 잃은 장비는 설명
@@ -96,48 +125,44 @@ export default class auction
                 // ELEMENT 007: 장신구는 무작위 각인 효과, 어빌리티 스톤은 제한사항, 무기/방어구는 트라이포드 효과, 힘을 잃은 장비는 내구도
                 if (typeOfItem == '목걸이' || typeOfItem == '귀걸이' || typeOfItem == '반지')
                 {
-                    embed['fields'].push({name: '기본 효과', value: itemJson['Element_005']['value']['Element_001'], inline: true});
-                    embed['fields'].push({name: '추가 효과', value: itemJson['Element_006']['value']['Element_001'], inline: true});
-                    embed['fields'].push({name: '무작위 각인 효과', value: itemJson['Element_007']['value']['Element_001'], inline: true});
+                    tooltip.push({name: '기본 효과', value: itemJson['Element_005']['value']['Element_001'], inline: true});
+                    tooltip.push({name: '추가 효과', value: itemJson['Element_006']['value']['Element_001'], inline: true});
+                    tooltip.push({name: '무작위 각인 효과', value: itemJson['Element_007']['value']['Element_001'], inline: true});
                 }
                 else if (typeOfItem == '어빌리티')
                 {
-                    embed['fields'].push({name: '무작위 각인 효과', value: itemJson['Element_005']['value']['Element_001']});
-                    embed['fields'].push({name: '메시지', value: itemJson['Element_006']['value']});
-                    embed['fields'].push({name: '제한 사항', value: itemJson['Element_007']['value']});
+                    tooltip.push({name: '무작위 각인 효과', value: itemJson['Element_005']['value']['Element_001']});
+                    tooltip.push({name: '메시지', value: itemJson['Element_006']['value']});
+                    tooltip.push({name: '제한 사항', value: itemJson['Element_007']['value']});
                 }
                 else if (typeOfItem == '힘을')
                 {
-                    embed['fields'].push({name: '설명', value: itemJson['Element_005']['value']});
-                    embed['fields'].push({name: '입수처', value: itemJson['Element_006']['value']});
+                    tooltip.push({name: '설명', value: itemJson['Element_005']['value']});
+                    tooltip.push({name: '입수처', value: itemJson['Element_006']['value']});
                     // 내구도 생략
                 }
                 else
                 {
-                    embed['fields'].push({name: '추가 효과', value: itemJson['Element_005']['value']['Element_001']});
-                    //embed['fields'].push({name: '현재 단계 재련 경험치', value: itemJson['Element_006']['value']['value'] + " / " + itemJson['Element_006']['value']['maximum']});
-                    embed['fields'].push({name: '트라이포드 효과', value: itemJson['Element_007']['value']['Element_000']['contentStr']['Element_000']['contentStr'] + " / " + itemJson['Element_007']['value']['Element_000']['contentStr']['Element_001']['contentStr']});
+                    tooltip.push({name: '추가 효과', value: itemJson['Element_005']['value']['Element_001']});
+                    //tooltip.push({name: '현재 단계 재련 경험치', value: itemJson['Element_006']['value']['value'] + " / " + itemJson['Element_006']['value']['maximum']});
+                    tooltip.push({name: '트라이포드 효과', value: itemJson['Element_007']['value']['Element_000']['contentStr']['Element_000']['contentStr'] + " / " + itemJson['Element_007']['value']['Element_000']['contentStr']['Element_001']['contentStr']});
                 }
 
                 // ELEMENT 008: 장신구랑 무기/방어구는 품질 업그레이드 가능 여부, 어빌리티 스톤은 입수처
                 if (typeOfItem != '힘을') {
                     if (typeOfItem != '어빌리티') {
-                        embed['fields'].push({name: '품질 업그레이드 가능 여부', value: itemJson['Element_008']['value']});
+                        tooltip.push({name: '품질 업그레이드 가능 여부', value: itemJson['Element_008']['value']});
                     } else {
-                        embed['fields'].push({name: '입수처', value: itemJson['Element_008']['value']});
+                        tooltip.push({name: '입수처', value: itemJson['Element_008']['value']});
                     }
 
                     // ELEMENT 009: 장신구랑 무기/방어구는 입수처, 어빌리티 스톤에는 없음
                     if (typeOfItem != '어빌리티') {
-                        embed['fields'].push({name: '입수처', value: itemJson['Element_009']['value']});
+                        tooltip.push({name: '입수처', value: itemJson['Element_009']['value']});
                     }
                 }
 
-                embed['fields'].push({name: '현재 최고가', value: aucData[i].childNodes[1].innerText.replace(/[^0-9]/gim, ''), inline: true});
-                embed['fields'].push({name: '최소 입찰가', value: aucData[i].childNodes[3].innerText.replace(/[^0-9]/gim, ''), inline: true});
-                embed['fields'].push({name: '즉시 구매가', value: aucData[i].childNodes[5].innerText.replace(/[^0-9]/gim, ''), inline: true});
-
-                embeds.embeds.push(embed);
+                embeds['embeds'].push(embed);
             }
 
             whm.sendWebhook(
@@ -225,4 +250,16 @@ export default class auction
         this.http.responseType = "text/html; charset=utf-8";
         this.http.send(requestBody);
     };
+
+    #decodeJsEscape(str)
+    {
+        let resultStr = str.toString().replace(/&quot;/gi, '\"')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .split(/"><img/)[0]
+            .split(/data-item="/gi)[1]
+            .replace(/<BR>/gi, ' / ')
+            .replace(/(<([^>]+)>)/ig,"");
+        return resultStr;
+    }
 }
