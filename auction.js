@@ -70,7 +70,7 @@ export default class auction
                     fields: [ ]
                 };
 
-                //embed['url'] = 'http://3.140.246.56:8080/api/LostArk/itemToolTip';
+                embed['url'] = 'http://3.140.246.56:8080/api/LostArk/itemToolTip?test=' + i;
 
                 embed['fields'].push({name: '거래 정보', value: countData[i].innerText, inline: true});
 
