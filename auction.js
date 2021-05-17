@@ -210,9 +210,9 @@ export default class auction
 
                 console.log('###');
                 console.log('http://localhost:3000/api/LostArk/itemToolTip?Item-Json='
-                    + lzString.compressToEncodedURIComponent(JSON.stringify(tooltipSlot)).toString('base64'));
+                    + lzString.compressToEncodedURIComponent(JSON.stringify(tooltipSlot)));
                 embed['url'] = 'http://localhost:3000/api/LostArk/itemToolTip?Item-Json='
-                    + lzString.compressToEncodedURIComponent(JSON.stringify(tooltipSlot)).toString('base64');
+                    + lzString.compressToEncodedURIComponent(JSON.stringify(tooltipSlot));
 
                 embed['fields'].push({name: '거래 정보', value: countData[i].innerText, inline: true});
 
